@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Razorpay Payment</title>
+</head>
+<body>
+  <h1>Razorpay Test Payment</h1>
+  <form id="payment-form">
+    <label for="amount">Amount (INR):</label>
+    <input type="number" id="amount" name="amount" required>
+    <button type="button" onclick="payNow()">Pay Now</button>
+  </form>
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script>
+    async function payNow() {
+      const amount = document.getElementById('amount').value;
+
+      if (!amount || isNaN(amount) || amount <= 0) {
+        alert("Please enter a valid amount");
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:3000/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount })
+        });
+
+        const order = await response.json();
+
+        const options = {
+          key: 'rzp_test_WLUjOO4FFVsmBb', // Your test key_id
+          amount: order.amount,
+          currency: order.currency,
+          name: 'DD INFO TECH',
+          description: 'Test Payment',
+          order_id: order.id,
+          callback_url: 'http://localhost:3000/payment-success',
+          prefill: {
+            name: 'Test User',
+            email: 'test@example.com',
+            contact: '9999999999'
+          },
+          theme: { color: '#000000' },
+          handler: function (response) {
+            fetch('http://localhost:3000/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.status === 'ok') {
+                window.location.href = 'http://localhost:3000/payment-success';
+              } else {
+                alert('Payment verification failed');
+              }
+            });
+          }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+      } catch (err) {
+        console.error('Payment initiation error:', err);
+        alert('Something went wrong');
+      }
+    }
+  </script>
+</body>
+</html>
+
