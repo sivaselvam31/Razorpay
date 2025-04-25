@@ -5,19 +5,20 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
-// Razorpay instance with test credentials
+// Razorpay instance with LIVE credentials from .env
 const razorpay = new Razorpay({
-  key_id: 'rzp_test_WLUjOO4FFVsmBb',       // <-- your test key_id
-  key_secret: 'axbhx0HkODyBVoh0DkxWtZwN',  // <-- your test key_secret
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(__dirname)); // To serve static files like HTML
+app.use(express.static(path.join(__dirname, 'public')));
 
 const readData = () =>
   fs.existsSync('orders.json') ? JSON.parse(fs.readFileSync('orders.json')) : [];
@@ -64,7 +65,7 @@ app.post('/verify-payment', (req, res) => {
 
   const body = razorpay_order_id + '|' + razorpay_payment_id;
   const expectedSignature = crypto
-    .createHmac('sha256', razorpay.key_secret)
+    .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
     .update(body)
     .digest('hex');
 
@@ -82,9 +83,8 @@ app.post('/verify-payment', (req, res) => {
   }
 });
 
-// Serve payment success page
 app.get('/payment-success', (req, res) => {
-  res.sendFile(path.join(__dirname, 'success.html'));
+  res.sendFile(path.join(__dirname, 'public', 'success.html'));
 });
 
 app.listen(port, () => {

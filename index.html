@@ -5,7 +5,7 @@
   <title>Razorpay Payment</title>
 </head>
 <body>
-  <h1>Razorpay Test Payment</h1>
+  <h1>Razorpay Live Payment</h1>
   <form id="payment-form">
     <label for="amount">Amount (INR):</label>
     <input type="number" id="amount" name="amount" required>
@@ -23,7 +23,7 @@
       }
 
       try {
-        const response = await fetch('http://localhost:3000/create-order', {
+        const response = await fetch('/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ amount })
@@ -32,33 +32,23 @@
         const order = await response.json();
 
         const options = {
-          key: 'rzp_test_WLUjOO4FFVsmBb', // Your test key_id
+          key: 'RAZORPAY_KEY_ID_FROM_ENV', // replace this below using template rendering or inject via script
           amount: order.amount,
           currency: order.currency,
-          name: 'DD INFO TECH',
-          description: 'Test Payment',
+          name: 'Your Company',
+          description: 'Live Payment',
           order_id: order.id,
-          callback_url: 'http://localhost:3000/payment-success',
-          prefill: {
-            name: 'Test User',
-            email: 'test@example.com',
-            contact: '9999999999'
-          },
-          theme: { color: '#000000' },
+          callback_url: '/payment-success',
           handler: function (response) {
-            fetch('http://localhost:3000/verify-payment', {
+            fetch('/verify-payment', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature
-              })
+              body: JSON.stringify(response)
             })
             .then(res => res.json())
             .then(data => {
               if (data.status === 'ok') {
-                window.location.href = 'http://localhost:3000/payment-success';
+                window.location.href = '/payment-success';
               } else {
                 alert('Payment verification failed');
               }
@@ -76,4 +66,3 @@
   </script>
 </body>
 </html>
-
